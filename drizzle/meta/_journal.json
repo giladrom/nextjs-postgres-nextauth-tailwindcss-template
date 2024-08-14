@@ -8,6 +8,13 @@
       "when": 1723629890401,
       "tag": "0000_chunky_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1723642780003,
+      "tag": "0001_skinny_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

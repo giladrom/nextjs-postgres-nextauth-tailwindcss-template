@@ -1,12 +1,12 @@
 import { db } from 'lib/db';
-import { products, sales } from 'lib/schema';
+import { products, sales, campaigns } from 'lib/schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return Response.json({
-    message: 'Uncomment to seed data after DB is set up.'
-  });
+  // return Response.json({
+  //   message: 'Uncomment to seed data after DB is set up.'
+  // });
 
   // await db.insert(products).values([
   //   {
@@ -131,4 +131,58 @@ export async function GET() {
   // }
 
   // await db.insert(sales).values(salesData);
+
+  // Seed campaigns
+  await db.insert(campaigns).values([
+    {
+      name: 'Summer Sale',
+      startDate: new Date('2024-06-01'),
+      endDate: new Date('2024-08-31'),
+      budget: 10000,
+      description: 'Annual summer promotional campaign'
+    },
+    {
+      name: 'Back to School',
+      startDate: new Date('2024-08-15'),
+      endDate: new Date('2024-09-15'),
+      budget: 5000,
+      description: 'Targeting students and parents for school supplies'
+    },
+    {
+      name: 'Holiday Special',
+      startDate: new Date('2023-11-15'),
+      endDate: new Date('2023-12-31'),
+      budget: 15000,
+      description: 'End-of-year holiday promotion'
+    }
+  ]);
+
+  const productList = await db.select().from(products);
+  const campaignList = await db.select().from(campaigns);
+  const salesData: any = [];
+
+  for (let i = 0; i < 1000; i++) {
+    const product = productList[Math.floor(Math.random() * productList.length)];
+    const quantity = Math.floor(Math.random() * 5) + 1;
+    const salePrice = parseFloat(product.price);
+    const saleDate = new Date(
+      new Date().setDate(new Date().getDate() - Math.floor(Math.random() * 180))
+    );
+
+    // 80% chance of attributing to a campaign
+    const campaign =
+      Math.random() < 0.8
+        ? campaignList[Math.floor(Math.random() * campaignList.length)]
+        : null;
+
+    salesData.push({
+      productId: product.id,
+      quantity,
+      salePrice,
+      saleDate,
+      campaignId: campaign ? campaign.id : null
+    });
+  }
+
+  await db.insert(sales).values(salesData);
 }
