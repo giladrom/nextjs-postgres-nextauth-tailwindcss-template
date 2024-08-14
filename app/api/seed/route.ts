@@ -1,4 +1,5 @@
-// import { db, products } from 'lib/db';
+import { db } from 'lib/db';
+import { products, sales } from 'lib/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,4 +110,25 @@ export async function GET() {
   //     availableAt: new Date()
   //   }
   // ]);
+
+  // const productList = await db.select().from(products);
+  // const salesData: any = [];
+
+  // for (let i = 0; i < 1000; i++) {
+  //   const product = productList[Math.floor(Math.random() * productList.length)];
+  //   const quantity = Math.floor(Math.random() * 5) + 1; // Random quantity between 1 and 5
+  //   const salePrice = parseFloat(product.price); // Use the product's price
+  //   const saleDate = new Date(
+  //     new Date().setDate(new Date().getDate() - Math.floor(Math.random() * 180))
+  //   ); // Random date within the last 6 months
+
+  //   salesData.push({
+  //     productId: product.id,
+  //     quantity,
+  //     salePrice,
+  //     saleDate
+  //   });
+  // }
+
+  // await db.insert(sales).values(salesData);
 }
