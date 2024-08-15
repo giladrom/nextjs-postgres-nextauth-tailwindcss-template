@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getSales, getProducts, getCampaigns } from '@/lib/db';
+import { getSales, getAllProducts, getCampaigns } from '@/lib/db';
 
 export async function GET() {
   try {
     const { sales } = await getSales();
-    const { products } = await getProducts();
+    const { products } = await getAllProducts();
     const { campaigns } = await getCampaigns();
-
-    console.log(sales);
 
     const productMap = products.reduce((acc, product) => {
       acc[product.id] = product.name;

@@ -14,6 +14,9 @@ import { SelectProduct } from '@/lib/db';
 import { deleteProduct } from './actions';
 
 export function Product({ product }: { product: SelectProduct }) {
+  
+  const totalSales = product.sales.reduce((acc, sale) => acc + sale.quantity, 0);
+
   return (
     <TableRow>
       <TableCell className="hidden sm:table-cell">
@@ -32,7 +35,7 @@ export function Product({ product }: { product: SelectProduct }) {
         </Badge>
       </TableCell>
       <TableCell className="hidden md:table-cell">{`$${product.price}`}</TableCell>
-      <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
+      <TableCell className="hidden md:table-cell">{totalSales}</TableCell>
       <TableCell className="hidden md:table-cell">
         {product.availableAt.toLocaleDateString()}
       </TableCell>

@@ -9,6 +9,7 @@ import {
   uuid,
   varchar
 } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const statusEnum = pgEnum('status', ['active', 'inactive', 'archived']);
 
@@ -22,6 +23,10 @@ export const products = pgTable('products', {
   availableAt: timestamp('available_at').notNull()
 });
 
+export const productsRelations = relations(products, ({ many }) => ({
+  sales: many(sales)
+}));
+
 export const campaigns = pgTable('campaigns', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -33,11 +38,23 @@ export const campaigns = pgTable('campaigns', {
 
 export const sales = pgTable('sales', {
   id: uuid('id').defaultRandom().primaryKey(),
-  productId: integer('product_id')
-    .references(() => products.id)
-    .notNull(),
+  //   productId: integer('product_id')
+  //     .references(() => products.id)
+  // .notNull(),
+  productId: integer('product_id'),
   quantity: integer('quantity').notNull(),
   salePrice: numeric('sale_price', { precision: 10, scale: 2 }).notNull(),
   saleDate: timestamp('sale_date').defaultNow().notNull(),
-  campaignId: integer('campaign_id').references(() => campaigns.id)
+  campaignId: integer('campaign_id')
 });
+
+export const salesRelations = relations(sales, ({ many, one }) => ({
+  product: one(products, {
+    fields: [sales.productId],
+    references: [products.id]
+  }),
+  campaign: one(campaigns, {
+    fields: [sales.campaignId],
+    references: [campaigns.id]
+  })
+}));

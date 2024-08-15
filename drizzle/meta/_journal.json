@@ -15,6 +15,13 @@
       "when": 1723642780003,
       "tag": "0001_skinny_nico_minoru",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1723710933899,
+      "tag": "0002_numerous_king_cobra",
+      "breakpoints": true
     }
   ]
 }
