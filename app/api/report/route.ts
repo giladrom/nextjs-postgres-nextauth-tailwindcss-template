@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getSalesData } from '@/lib/salesData';
 import OpenAI from 'openai';
 import { google } from 'googleapis';
-import { authenticate } from '@google-cloud/local-auth';
 import { GoogleAuth } from 'google-auth-library';
 
 const openai = new OpenAI({
@@ -24,7 +23,7 @@ export async function GET() {
       messages: [
         {
           role: 'user',
-          content: `Please generate a sales report from the following JSON structure. The report should have a 1-paragraph summary for the last 30 days at the top, including sales and campaign information, including any trends that you can detect, and then a detailed breakdown of the sales by product and campaign in a table format sorted by revenue. The report should be in markdown format: ${JSON.stringify(
+          content: `${process.env.OPENAI_PROMPT} ${JSON.stringify(
             salesByMonth
           )}`
         }
@@ -34,7 +33,7 @@ export async function GET() {
     const reportContent = response.choices[0].message.content;
 
     // Create Google Doc
-    const docUrl = await createGoogleDoc(reportContent);
+    const docUrl = await createGoogleDoc(reportContent!);
 
     return NextResponse.json({
       response: reportContent,
@@ -83,19 +82,144 @@ async function createGoogleDoc(content: string): Promise<string> {
       throw new Error('Failed to create document');
     }
 
-    // Update the document with the content
+    // Parse the content
+    const lines = content.split('\n');
+    let requests: any[] = [];
+    let inTable = false;
+    let tableRows: string[][] = [];
+
+    for (const line of lines) {
+      if (line.trim() === '[TABLE]') {
+        inTable = true;
+        continue;
+      }
+
+      if (inTable) {
+        if (line.trim() === '') {
+          // Empty line marks the end of the table
+          inTable = false;
+
+          // Insert the table
+          if (tableRows.length > 0) {
+            requests.push({
+              insertTable: {
+                rows: tableRows.length,
+                columns: tableRows[0].length,
+                endOfSegmentLocation: { segmentId: '' }
+              }
+            });
+
+            tableRows.forEach((row, rowIndex) => {
+              row.forEach((cell, cellIndex) => {
+                requests.push({
+                  insertText: {
+                    endOfSegmentLocation: { segmentId: '' },
+                    text:
+                      cell.trim() + (cellIndex === row.length - 1 ? '\n' : '')
+                  }
+                });
+                if (rowIndex === 0) {
+                  // Bold the header row
+                  requests.push({
+                    updateTextStyle: {
+                      range: {
+                        startIndex: 1,
+                        endIndex: 2
+                      },
+                      textStyle: { bold: true },
+                      fields: 'bold'
+                    }
+                  });
+                }
+              });
+            });
+
+            tableRows = [];
+          }
+        } else {
+          // Add row to the table
+          tableRows.push(
+            line
+              .split('|')
+              .map((cell) => cell.trim())
+              .filter((cell) => cell !== '')
+          );
+        }
+      } else if (line.startsWith('# ')) {
+        // Heading 1
+        requests.push({
+          insertText: {
+            endOfSegmentLocation: { segmentId: '' },
+            text: line.substring(2) + '\n'
+          }
+        });
+        requests.push({
+          updateParagraphStyle: {
+            range: {
+              startIndex: 1,
+              endIndex: 2
+            },
+            paragraphStyle: {
+              namedStyleType: 'HEADING_1'
+            },
+            fields: 'namedStyleType'
+          }
+        });
+      } else if (line.startsWith('## ')) {
+        // Heading 2
+        requests.push({
+          insertText: {
+            endOfSegmentLocation: { segmentId: '' },
+            text: line.substring(3) + '\n'
+          }
+        });
+        requests.push({
+          updateParagraphStyle: {
+            range: {
+              startIndex: 1,
+              endIndex: 2
+            },
+            paragraphStyle: {
+              namedStyleType: 'HEADING_2'
+            },
+            fields: 'namedStyleType'
+          }
+        });
+      } else if (line.startsWith('### ')) {
+        // Heading 3
+        requests.push({
+          insertText: {
+            endOfSegmentLocation: { segmentId: '' },
+            text: line.substring(3) + '\n'
+          }
+        });
+        requests.push({
+          updateParagraphStyle: {
+            range: {
+              startIndex: 1,
+              endIndex: 2
+            },
+            paragraphStyle: {
+              namedStyleType: 'HEADING_3'
+            },
+            fields: 'namedStyleType'
+          }
+        });
+      } else {
+        // Normal text
+        requests.push({
+          insertText: {
+            endOfSegmentLocation: { segmentId: '' },
+            text: line + '\n'
+          }
+        });
+      }
+    }
+
+    // Update the document with the formatted content
     await docs.documents.batchUpdate({
       documentId,
-      requestBody: {
-        requests: [
-          {
-            insertText: {
-              location: { index: 1 },
-              text: content
-            }
-          }
-        ]
-      }
+      requestBody: { requests }
     });
 
     // Set public read permission

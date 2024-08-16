@@ -87,7 +87,7 @@ export async function getSales(): Promise<{
 }> {
   // Always search the full table, not per page
   return {
-    sales: await db.select().from(sales).orderBy(sales.campaignId).limit(5000)
+    sales: await db.select().from(sales).orderBy(sales.campaignId)
   };
 }
 

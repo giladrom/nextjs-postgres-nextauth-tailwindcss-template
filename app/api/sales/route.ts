@@ -3,9 +3,9 @@ import { getSalesData } from '@/lib/salesData';
 
 export async function GET() {
   try {
-    const { salesWithDetails } = await getSalesData();
+    const { salesByMonth } = await getSalesData();
 
-    return NextResponse.json({ sales: salesWithDetails });
+    return NextResponse.json({ sales: salesByMonth });
   } catch (error) {
     console.error('Error fetching sales data:', error);
     return NextResponse.json(
