@@ -42,12 +42,17 @@ interface MonthlySalesSummary {
   campaignSummaries: { [campaignId: string]: CampaignSummary };
 }
 
+interface RevenueData {
+  labels: string[];
+  data: number[];
+}
+
 const SalesDashboard: React.FC = () => {
   const [salesData, setSalesData] = useState<MonthlySalesSummary[]>([]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [bestSellers, setBestSellers] = useState<any[]>([]);
-  const [revenueData, setRevenueData] = useState({ labels: [], data: [] });
+  const [revenueData, setRevenueData] = useState<RevenueData>({ labels: [], data: [] });
   const [campaignPerformance, setCampaignPerformance] = useState<any[]>([]);
 
   useEffect(() => {
