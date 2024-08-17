@@ -17,6 +17,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { ClipboardMinus } from 'lucide-react';
+import { toast } from "sonner"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -47,6 +50,11 @@ interface RevenueData {
   data: number[];
 }
 
+interface Report {
+  response: string;
+  googleDocUrl: string;
+}
+
 const SalesDashboard: React.FC = () => {
   const [salesData, setSalesData] = useState<MonthlySalesSummary[]>([]);
   const [totalSales, setTotalSales] = useState(0);
@@ -54,7 +62,10 @@ const SalesDashboard: React.FC = () => {
   const [bestSellers, setBestSellers] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<RevenueData>({ labels: [], data: [] });
   const [campaignPerformance, setCampaignPerformance] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
 
+  // Fetch sales data when first loading the page
   useEffect(() => {
     const fetchSalesData = async () => {
       try {
@@ -71,8 +82,35 @@ const SalesDashboard: React.FC = () => {
       }
     };
 
+    setLoading(true);
     fetchSalesData();
   }, []);
+
+  // Display Loading notification
+  useEffect(() => {
+    if (loading) {
+      toast("Loading sales data...", {
+        duration: 2000,
+        position: 'bottom-right',
+      })
+      setLoading(false);
+    }
+  }, [loading]);
+
+
+  const generateReport = async (): Promise<Report> => {
+    try {
+      const response = await fetch('/api/report');
+      if (!response.ok) {
+        throw new Error('Failed to fetch sales data');
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching sales data:', error);
+      return { response: "Error fetching sales data", googleDocUrl: "" };      
+    }
+  }
 
   const processData = (data: MonthlySalesSummary[]) => {
     if (data.length === 0) return;
@@ -151,8 +189,37 @@ const SalesDashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
+
+      <div className="flex justify-between items-center mb-6">
       <h1 className="text-3xl font-bold mb-6">Sales Dashboard (Last 30 Days)</h1>
-      
+      <Button size="sm" className="h-8 gap-1"
+      onClick={async () => {
+        toast("Generating report. You'll be notified when it's ready.")
+
+        const report = await generateReport();
+        if (report.googleDocUrl) {
+          toast("Report Generated.", {
+            duration: Infinity,
+          action: {
+            label: 'View Report',
+            onClick: () => {
+              window.open(report.googleDocUrl, '_blank')
+              toast.dismiss()
+            }
+            },
+          })
+        } else {
+          toast.error("Error generating report.")
+        }
+      }}
+      >
+            <ClipboardMinus className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+              Generate Report
+            </span>
+          </Button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader>
